@@ -386,39 +386,84 @@ function testHebrewRecognition() {
 	}
 }
 
-// Check for debug mode and show recognition box (and test button) if enabled
-function checkDebugMode() {
-	const urlParams = new URLSearchParams(window.location.search);
-	const debugMode = urlParams.get('debug') === 'on';
-	const testButton = document.getElementById('testButton');
+// Debug mode helpers and keyboard toggle (persisted in localStorage)
+const DEBUG_STORAGE_KEY = 'hebrewTrainerDebug';
+
+function applyDebugModeUI(enabled) {
 	const recognitionBox = document.getElementById('recognitionFeedback');
-
-	// Toggle entire recognition box
+	const testButton = document.getElementById('testButton');
 	if (recognitionBox) {
-		if (debugMode) {
-			recognitionBox.classList.remove('hidden');
-			recognitionBox.style.display = 'block';
-		} else {
-			recognitionBox.classList.add('hidden');
-			recognitionBox.style.display = 'none';
-		}
+		recognitionBox.classList.toggle('hidden', !enabled);
+		recognitionBox.style.display = enabled ? 'block' : 'none';
 	}
-
-	// Toggle the test button
 	if (testButton) {
-		if (debugMode) {
-			testButton.classList.remove('hidden');
-			testButton.style.display = 'inline-block';
-		} else {
-			testButton.classList.add('hidden');
-			testButton.style.display = 'none';
-		}
+		testButton.classList.toggle('hidden', !enabled);
+		testButton.style.display = enabled ? 'inline-block' : 'none';
 	}
 }
 
-// Run on load (ensure DOM is ready)
+function getDebugModeFromUrl() {
+	const p = new URLSearchParams(window.location.search);
+	const v = p.get('debug');
+	if (v === 'on') return true;
+	if (v === 'off') return false;
+	return null;
+}
+
+function getStoredDebugMode() {
+	const v = localStorage.getItem(DEBUG_STORAGE_KEY);
+	if (v === 'on') return true;
+	if (v === 'off') return false;
+	return null;
+}
+
+function storeDebugMode(enabled) {
+	localStorage.setItem(DEBUG_STORAGE_KEY, enabled ? 'on' : 'off');
+}
+
+function setUrlDebugParam(enabled) {
+	const url = new URL(window.location.href);
+	url.searchParams.set('debug', enabled ? 'on' : 'off');
+	history.replaceState({}, '', url);
+}
+
+function initDebugMode() {
+	const fromUrl = getDebugModeFromUrl();
+	let enabled;
+	if (fromUrl !== null) {
+		enabled = fromUrl;
+		storeDebugMode(enabled);
+	} else {
+		const stored = getStoredDebugMode();
+		enabled = stored !== null ? stored : false;
+	}
+	applyDebugModeUI(enabled);
+	setUrlDebugParam(enabled);
+}
+
+function toggleDebugMode() {
+	const current = getStoredDebugMode();
+	const enabled = current === null ? true : !current;
+	storeDebugMode(enabled);
+	applyDebugModeUI(enabled);
+	setUrlDebugParam(enabled);
+}
+
+// Initialize and attach keyboard handler on load
 if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', checkDebugMode);
+	document.addEventListener('DOMContentLoaded', () => {
+		initDebugMode();
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'd' || e.key === 'D') {
+				toggleDebugMode();
+			}
+		});
+	});
 } else {
-	checkDebugMode();
+	initDebugMode();
+	document.addEventListener('keydown', (e) => {
+		if (e.key === 'd' || e.key === 'D') {
+			toggleDebugMode();
+		}
+	});
 }
