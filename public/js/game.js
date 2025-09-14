@@ -385,3 +385,40 @@ function testHebrewRecognition() {
 		handleSpeechResult([testWord]);
 	}
 }
+
+// Check for debug mode and show recognition box (and test button) if enabled
+function checkDebugMode() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const debugMode = urlParams.get('debug') === 'on';
+	const testButton = document.getElementById('testButton');
+	const recognitionBox = document.getElementById('recognitionFeedback');
+
+	// Toggle entire recognition box
+	if (recognitionBox) {
+		if (debugMode) {
+			recognitionBox.classList.remove('hidden');
+			recognitionBox.style.display = 'block';
+		} else {
+			recognitionBox.classList.add('hidden');
+			recognitionBox.style.display = 'none';
+		}
+	}
+
+	// Toggle the test button
+	if (testButton) {
+		if (debugMode) {
+			testButton.classList.remove('hidden');
+			testButton.style.display = 'inline-block';
+		} else {
+			testButton.classList.add('hidden');
+			testButton.style.display = 'none';
+		}
+	}
+}
+
+// Run on load (ensure DOM is ready)
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', checkDebugMode);
+} else {
+	checkDebugMode();
+}
