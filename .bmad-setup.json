@@ -1,0 +1,16 @@
+{
+  "repo_name": "words-he",
+  "visibility": "private",
+  "auth": "ok",
+  "git": {
+    "remote": "origin",
+    "branch": "main",
+    "tool": "gh"
+  },
+  "bmad": {
+    "installed": false,
+    "version": null,
+    "packs": [],
+    "prd_sharded": null
+  }
+}
