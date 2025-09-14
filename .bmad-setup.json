@@ -8,8 +8,8 @@
     "tool": "gh"
   },
   "bmad": {
-    "installed": false,
-    "version": null,
+    "installed": true,
+    "version": "4.43.1",
     "packs": [],
     "prd_sharded": null
   }

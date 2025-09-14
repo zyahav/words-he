@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hebrew Reading Trainer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="app">
+      <h1>Hebrew Reading Trainer</h1>
+      <button class="start-button" onclick="startApp()">Start Training</button>
+
+      <div class="error hidden" id="error"></div>
+
+
+      <div class="recognition-feedback" id="recognitionFeedback">
+        <h3>Speech Recognition:</h3>
+        <div class="recognized-text" id="recognizedText">Listening for speech...</div>
+        <button onclick="testHebrewRecognition()" class="test-button">Test Hebrew Word</button>
+      </div>
+
+      <div class="hebrew-text" id="hebrewText"></div>
+
+
+      <div class="status" id="status"></div>
+
+      <div class="sound-visualizer" id="soundVisualizer">
+        <canvas id="visualizerCanvas"></canvas>
+      </div>
+
+
+      <button class="speaker-button" id="speakerButton" onclick="playEnglishWord()"
+        title="Click to hear the English word">🔊</button>
+
+      <div class="stars-container" id="starsContainer" style="display: none;">
+        <div class="star">⭐</div>
+        <div class="star">⭐</div>
+        <div class="star">⭐</div>
+      </div>
+
+      <div class="completion-time" id="completionTime" style="display: none;"></div>
+      <button class="restart-button" id="restartButton" onclick="restartApp()" style="display: none;">Restart</button>
+    </div>
+  </div>
+
+  <!-- Load JavaScript modules in correct order -->
+  <script src="js/utils.js"></script>
+  <script src="js/words.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/script.js"></script>
+</body>
+
+</html>

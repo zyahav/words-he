@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../words-he-en/public"
+		},
+		{
+			"path": "../words-he-en/server"
+		}
+	],
+	"settings": {}
+}
