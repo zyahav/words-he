@@ -4,6 +4,15 @@ let currentStage = 'start'; // start, hebrew, translation, complete
 let startTime = null;
 let appInitialized = false; // one-time setup flag
 
+// Mode: Hebrew-only (skip English step) via URL params
+// Enable with either ?hebrewOnly=on or ?mode=hebrew
+let hebrewOnlyMode = false;
+function initHebrewOnlyMode() {
+	const p = new URLSearchParams(window.location.search);
+	hebrewOnlyMode = p.get('hebrewOnly') === 'on' || p.get('mode') === 'hebrew';
+	console.log(`🛠️ [MODE] Hebrew-only mode: ${hebrewOnlyMode ? 'ON' : 'OFF'}`);
+}
+
 // High score tracking
 function getHighScore() {
 	const saved = localStorage.getItem('hebrewTrainerHighScore');
@@ -132,10 +141,17 @@ function handleCorrectHebrew() {
 	playSound(1000, 300);
 
 	setTimeout(() => {
-		console.log(
-			'🔄 [HANDLE_CORRECT_HEBREW] Moving to English translation stage'
-		);
-		showQuestionMark();
+		if (hebrewOnlyMode) {
+			console.log(
+				'🔄 [HANDLE_CORRECT_HEBREW] Hebrew-only mode: moving to next word'
+			);
+			nextWord();
+		} else {
+			console.log(
+				'🔄 [HANDLE_CORRECT_HEBREW] Moving to English translation stage'
+			);
+			showQuestionMark();
+		}
 	}, 100);
 }
 
@@ -452,6 +468,7 @@ function toggleDebugMode() {
 // Initialize and attach keyboard handler on load
 if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', () => {
+		initHebrewOnlyMode();
 		initDebugMode();
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'd' || e.key === 'D') {
@@ -460,6 +477,7 @@ if (document.readyState === 'loading') {
 		});
 	});
 } else {
+	initHebrewOnlyMode();
 	initDebugMode();
 	document.addEventListener('keydown', (e) => {
 		if (e.key === 'd' || e.key === 'D') {
