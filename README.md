@@ -15,6 +15,16 @@ python3 -m http.server 8080 --directory public
 # http://localhost:8080
 ```
 
+Alternative (from public directory):
+
+```bash
+cd public
+python3 -m http.server 8080
+# Then open in your browser:
+# http://localhost:8080
+```
+
+
 ### Option 2: Node.js (using `npx serve`)
 
 ```bash
