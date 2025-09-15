@@ -99,7 +99,7 @@ This repo is set up to deploy via Vercel using GitHub as the source of truth.
 
 Environments
 - Production: branch `main` → https://words-he.vercel.app
-- Staging: branch `staging` → Vercel Preview deployment (optionally aliased to a stable URL)
+- Staging: branch `staging` → https://words-he-git-staging-zuriel-yahavs-projects.vercel.app
 - PR Previews: every non-`main` branch and PR gets an automatic Preview URL
 
 Vercel Project settings
