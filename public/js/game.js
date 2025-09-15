@@ -439,8 +439,12 @@ function storeDebugMode(enabled) {
 
 function setUrlDebugParam(enabled) {
 	const url = new URL(window.location.href);
-	url.searchParams.set('debug', enabled ? 'on' : 'off');
-	history.replaceState({}, '', url);
+	const current = url.searchParams.get('debug');
+	const desired = enabled ? 'on' : 'off';
+	if (current !== desired) {
+		url.searchParams.set('debug', desired);
+		history.replaceState({}, '', url);
+	}
 }
 
 function initDebugMode() {
@@ -454,7 +458,7 @@ function initDebugMode() {
 		enabled = stored !== null ? stored : false;
 	}
 	applyDebugModeUI(enabled);
-	setUrlDebugParam(enabled);
+	// Do NOT modify URL on load; avoid unnecessary history.replaceState
 }
 
 function toggleDebugMode() {
