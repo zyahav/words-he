@@ -66,6 +66,17 @@ function beginRun() {
 	hideSoundVisualizer();
 	hideRecognitionFeedback();
 
+	// If debug is enabled, keep the recognition box and test button visible immediately
+	try {
+		const fromUrl = getDebugModeFromUrl();
+		const stored = getStoredDebugMode();
+		const enabled =
+			fromUrl !== null ? fromUrl : stored !== null ? stored : false;
+		applyDebugModeUI(enabled);
+	} catch (e) {
+		console.log('⚠️ [BEGIN_RUN] Could not re-apply debug UI:', e);
+	}
+
 	// Reset run state
 	currentWordIndex = 0;
 	startTime = Date.now();
