@@ -91,7 +91,7 @@ function setupSpeechRecognition() {
 						'❌ [RECOGNITION] Not restarting - stage changed or auto-restart disabled'
 					);
 				}
-			}, 50);
+			}, 150);
 		} else {
 			console.log(
 				'❌ [RECOGNITION] Not restarting - not in active stage or auto-restart disabled'
@@ -100,15 +100,19 @@ function setupSpeechRecognition() {
 	};
 
 	recognition.onerror = function (event) {
+		// Handle benign cases first to avoid scary logs
 		if (event.error === 'no-speech') {
 			console.log(
 				'ℹ️ [RECOGNITION] No speech detected — keeping session alive'
 			);
-			// Let onend handle the quick restart to avoid double timers
 			return;
 		}
-		console.error('❌ [RECOGNITION] onerror - Recognition error occurred');
-		console.error(`   Error type: ${event.error}`);
+		if (event.error === 'aborted') {
+			console.log('⚠️ [RECOGNITION] Aborted (normal during stop/start)');
+			return;
+		}
+		// Real errors
+		console.error('❌ [RECOGNITION] onerror', event.error);
 		console.error(`   Current stage: ${currentStage}`);
 		console.error(`   Was listening: ${isListening}`);
 		console.error(`   Timestamp: ${new Date().toISOString()}`);
@@ -118,13 +122,6 @@ function setupSpeechRecognition() {
 			showError(
 				'Microphone access denied. Please enable microphone access and reload the page.'
 			);
-		} else if (event.error === 'aborted') {
-			console.log(
-				'⚠️ [RECOGNITION] Recognition was aborted (normal during stop/start)'
-			);
-		} else if (event.error === 'no-speech') {
-			// Handled above; no extra action here
-			return;
 		} else {
 			console.error(
 				`❌ [RECOGNITION] Other error: ${event.error} - will restart in 1000ms`
