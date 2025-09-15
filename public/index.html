@@ -14,8 +14,20 @@
     <div id="app">
       <h1>Hebrew Reading Trainer</h1>
       <button class="start-button" onclick="startApp()">Start Training</button>
+      <div id="stylesGrid" class="styles-grid">
+        <button class="style-button" data-style="minecraft-512x512" type="button">Minecraft</button>
+        <button class="style-button" data-style="style2" type="button">Style 2</button>
+        <button class="style-button" data-style="style3" type="button">Style 3</button>
+        <button class="style-button" data-style="style4" type="button">Style 4</button>
+      </div>
+
 
       <div class="error hidden" id="error"></div>
+
+      <div class="word-image-box" id="wordImageBox">
+        <img id="wordImage" class="word-image" alt="Word image" />
+      </div>
+
 
 
       <div class="recognition-feedback" id="recognitionFeedback">
@@ -34,8 +46,10 @@
       </div>
 
 
-      <button class="speaker-button" id="speakerButton" onclick="playEnglishWord()"
-        title="Click to hear the English word">🔊</button>
+      <div class="speaker-row">
+        <button class="speaker-button" id="speakerButton" onclick="playEnglishWord()"
+          title="Click to hear the English word" type="button">🔊</button>
+      </div>
 
       <div class="stars-container" id="starsContainer" style="display: none;">
         <div class="star">⭐</div>
@@ -45,9 +59,10 @@
       <!-- Exit button to return to Start screen -->
 
       <div class="completion-time" id="completionTime" style="display: none;"></div>
-      <button class="exit-button" id="exitButton" onclick="exitToStart()" title="Exit to Start">✕</button>
+      <button class="exit-button" id="exitButton" onclick="exitToStart()" title="Exit to Start" type="button">✕</button>
 
-      <button class="restart-button" id="restartButton" onclick="restartApp()" style="display: none;">Restart</button>
+      <button class="restart-button" id="restartButton" onclick="restartApp()" style="display: none;"
+        type="button">Restart</button>
     </div>
   </div>
 

@@ -4,6 +4,142 @@ let currentStage = 'start'; // start, hebrew, translation, complete
 let startTime = null;
 let appInitialized = false; // one-time setup flag
 
+// Style selection (image theme)
+let selectedStyle = '';
+function getStyleFromUrl() {
+	const p = new URLSearchParams(window.location.search);
+	return p.get('style') || '';
+}
+function getStoredStyle() {
+	return localStorage.getItem('hebrewTrainerStyle') || '';
+}
+function storeStyle(v) {
+	if (v) localStorage.setItem('hebrewTrainerStyle', v);
+	else localStorage.removeItem('hebrewTrainerStyle');
+}
+function applyStyleSelectionUI() {
+	try {
+		// Update legacy select if present
+		if (typeof styleSelectEl !== 'undefined' && styleSelectEl) {
+			styleSelectEl.value = selectedStyle || '';
+		}
+		// Update style buttons grid
+		const buttons = document.querySelectorAll('.style-button');
+		buttons.forEach((btn) => {
+			const val = btn.getAttribute('data-style') || '';
+			btn.classList.toggle('active', !!selectedStyle && val === selectedStyle);
+		});
+	} catch (_) {}
+}
+function initStyleSelection() {
+	const fromUrl = getStyleFromUrl();
+	selectedStyle = fromUrl ? fromUrl : getStoredStyle();
+	applyStyleSelectionUI();
+	try {
+		// Legacy select support
+		if (typeof styleSelectEl !== 'undefined' && styleSelectEl) {
+			styleSelectEl.addEventListener('change', () => {
+				selectedStyle = styleSelectEl.value || '';
+				storeStyle(selectedStyle);
+				applyStyleSelectionUI();
+			});
+		}
+		// Grid buttons
+		const buttons = document.querySelectorAll('.style-button');
+		buttons.forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const val = btn.getAttribute('data-style') || '';
+				selectedStyle = val;
+				storeStyle(selectedStyle);
+				applyStyleSelectionUI();
+				// Auto-start training on style click when on Start screen
+				if (typeof currentStage === 'undefined' || currentStage === 'start') {
+					startApp();
+				}
+			});
+		});
+	} catch (_) {}
+}
+
+function resetWordImage() {
+	try {
+		if (typeof wordImageEl !== 'undefined' && wordImageEl) {
+			wordImageEl.style.visibility = 'hidden';
+			wordImageEl.removeAttribute('src');
+			wordImageEl.alt = '';
+		}
+	} catch (_) {}
+}
+
+function buildImageCandidatesForWord(word) {
+	if (!selectedStyle) return [];
+	const candidates = [];
+	const dir = `images/cards/${selectedStyle}/`;
+	// 1) Try the exact filename if provided (preserves niqqud and extension)
+	if (word.image && typeof word.image === 'string') {
+		candidates.push(dir + encodeURIComponent(word.image));
+	}
+	// 2) Try normalized base names with common extensions (prefer jpg/jpeg/png, then webp)
+	const stripNiqqud = (s) => s.replace(/[\u05B0-\u05C7\u05C8-\u05CF]/g, '');
+	const normalize = (s) =>
+		stripNiqqud((s || '').replace(/\.[a-zA-Z0-9]+$/, '')).trim();
+	const bases = Array.from(
+		new Set(
+			[normalize(word.image || ''), normalize(word.he || '')].filter(Boolean)
+		)
+	);
+	for (const b of bases) {
+		const enc = encodeURIComponent(b);
+		candidates.push(
+			`${dir}${enc}.jpg`,
+			`${dir}${enc}.jpeg`,
+			`${dir}${enc}.png`,
+			`${dir}${enc}.webp`
+		);
+	}
+	return candidates;
+}
+
+function showCurrentWordImageThen(next) {
+	if (!selectedStyle) {
+		next();
+		return;
+	}
+	const word = words[currentWordIndex];
+	const candidates = buildImageCandidatesForWord(word);
+	if (!candidates.length) {
+		next();
+		return;
+	}
+	let idx = 0;
+	const tryNext = () => {
+		if (idx >= candidates.length) {
+			next();
+			return;
+		}
+		const src = candidates[idx++];
+		const img = new Image();
+		img.onload = () => {
+			try {
+				if (wordImageEl) {
+					wordImageEl.src = src;
+					wordImageEl.alt = word.he || '';
+					wordImageEl.style.visibility = 'visible';
+				}
+			} catch (_) {}
+			setTimeout(() => {
+				resetWordImage();
+				next();
+			}, 1000);
+		};
+		img.onerror = () => {
+			tryNext();
+		};
+		img.src = src;
+	};
+	tryNext();
+}
+
 // Mode: Hebrew-only (skip English step) via URL params
 // Enable with either ?hebrewOnly=on or ?mode=hebrew
 let hebrewOnlyMode = false;
@@ -31,6 +167,20 @@ function beginRun() {
 	const titleEl = document.querySelector('h1');
 	if (startBtn) startBtn.style.display = 'none';
 	if (titleEl) titleEl.style.display = 'none';
+	try {
+		if (typeof stylesGridEl !== 'undefined' && stylesGridEl)
+			stylesGridEl.style.display = 'none';
+	} catch (_) {}
+	// Show gameplay UI elements
+	try {
+		const wordImageBoxEl = document.getElementById('wordImageBox');
+		if (wordImageBoxEl) wordImageBoxEl.style.display = 'flex';
+		hebrewTextEl.style.display = 'block';
+		statusEl.style.display = 'block';
+		soundVisualizerEl.style.display = 'block';
+		const speakerRowEl = document.querySelector('.speaker-row');
+		if (speakerRowEl) speakerRowEl.style.display = 'flex';
+	} catch (_) {}
 
 	// Reset per-run UI
 	hebrewTextEl.innerHTML = '';
@@ -41,7 +191,7 @@ function beginRun() {
 	hebrewTextEl.style.fontSize = '';
 	hebrewTextEl.style.color = '';
 
-	speakerButtonEl.style.display = 'none';
+	speakerButtonEl.style.visibility = 'hidden';
 	updateStatus('');
 	if (starsEl) {
 		starsEl.classList.add('hidden');
@@ -55,6 +205,8 @@ function beginRun() {
 		restartButtonEl.classList.add('hidden');
 		restartButtonEl.style.display = 'none';
 	}
+	// Keep styles grid hidden during gameplay
+	// (it will be shown again on Exit to Start)
 	hideError();
 
 	// Reset stars animation
@@ -63,8 +215,10 @@ function beginRun() {
 
 	// Ensure clean audio/recognition state
 	stopListening();
-	hideSoundVisualizer();
+	// Keep visualizer visible during gameplay
+	showSoundVisualizer();
 	hideRecognitionFeedback();
+	resetWordImage();
 
 	// If debug is enabled, keep the recognition box and test button visible immediately
 	try {
@@ -97,9 +251,21 @@ function exitToStart() {
 	stopListening();
 	hideSoundVisualizer();
 	hideRecognitionFeedback();
+	resetWordImage();
 
 	// Reset stage
 	currentStage = 'start';
+
+	// Hide gameplay UI elements on Start screen
+	try {
+		const wordImageBoxEl = document.getElementById('wordImageBox');
+		if (wordImageBoxEl) wordImageBoxEl.style.display = 'none';
+		hebrewTextEl.style.display = 'none';
+		statusEl.style.display = 'none';
+		soundVisualizerEl.style.display = 'none';
+		const speakerRowEl = document.querySelector('.speaker-row');
+		if (speakerRowEl) speakerRowEl.style.display = 'none';
+	} catch (_) {}
 
 	// Reset UI elements
 	hebrewTextEl.textContent = '';
@@ -128,6 +294,10 @@ function exitToStart() {
 	const titleEl = document.querySelector('h1');
 	if (titleEl) titleEl.style.display = 'block';
 	if (startBtn) startBtn.style.display = 'inline-block';
+	try {
+		if (typeof stylesGridEl !== 'undefined' && stylesGridEl)
+			stylesGridEl.style.display = 'grid';
+	} catch (_) {}
 }
 
 // Stage handlers
@@ -157,6 +327,7 @@ function showHebrewWord() {
 	hebrewTextEl.innerHTML = '';
 	hebrewTextEl.textContent = '';
 	hebrewTextEl.classList.remove('question-mark');
+	resetWordImage();
 
 	// Force reset all inline styles that might interfere
 	hebrewTextEl.style.direction = 'rtl';
@@ -169,11 +340,10 @@ function showHebrewWord() {
 	console.log(`✅ [SHOW_HEBREW] Hebrew text set: "${currentWord.he}"`);
 
 	// Hide speaker button during Hebrew stage
-	speakerButtonEl.style.display = 'none';
+	speakerButtonEl.style.visibility = 'hidden';
 
-	updateStatus(
-		`Read the Hebrew word aloud: <strong>${currentWord.he}</strong><br><small>Say it exactly to continue</small>`
-	);
+	// No instructional text during Hebrew stage; status will show Listening... when recognition starts
+	updateStatus('');
 
 	// Start listening with Hebrew language (short delay for clean transition)
 	console.log(
@@ -195,7 +365,7 @@ function handleCorrectHebrew() {
 	triggerConfetti();
 	playSound(1000, 300);
 
-	setTimeout(() => {
+	const proceed = () => {
 		if (hebrewOnlyMode) {
 			console.log(
 				'🔄 [HANDLE_CORRECT_HEBREW] Hebrew-only mode: moving to next word'
@@ -207,7 +377,8 @@ function handleCorrectHebrew() {
 			);
 			showQuestionMark();
 		}
-	}, 100);
+	};
+	showCurrentWordImageThen(proceed);
 }
 
 function showQuestionMark() {
@@ -241,7 +412,7 @@ function showQuestionMark() {
 	);
 
 	// Show speaker button for pronunciation (plays the hidden English meaning)
-	speakerButtonEl.style.display = 'inline-block';
+	speakerButtonEl.style.visibility = 'visible';
 
 	updateStatus(
 		'Say the English meaning out loud<br><small>Click 🔊 to hear the pronunciation if needed</small>'
@@ -264,7 +435,7 @@ function handleCorrectTranslation() {
 	console.log(`   Timestamp: ${new Date().toISOString()}`);
 
 	stopListening();
-	speakerButtonEl.style.display = 'none'; // Hide speaker button
+	speakerButtonEl.style.visibility = 'hidden'; // Hide speaker button
 
 	triggerConfetti();
 	playSound(1200, 300);
@@ -298,6 +469,18 @@ function showCompletion() {
 
 	currentStage = 'complete';
 	stopListening();
+
+	// Hide gameplay UI elements on completion
+	try {
+		const wordImageBoxEl = document.getElementById('wordImageBox');
+		if (wordImageBoxEl) wordImageBoxEl.style.display = 'none';
+		hebrewTextEl.style.display = 'none';
+		statusEl.style.display = 'none';
+		soundVisualizerEl.style.display = 'none';
+		const speakerRowEl = document.querySelector('.speaker-row');
+		if (speakerRowEl) speakerRowEl.style.display = 'none';
+		hideRecognitionFeedback();
+	} catch (_) {}
 
 	const endTime = Date.now();
 	const totalTime = Math.round((endTime - startTime) / 1000);
@@ -534,6 +717,7 @@ if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', () => {
 		initHebrewOnlyMode();
 		initDebugMode();
+		initStyleSelection();
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'd' || e.key === 'D') {
 				toggleDebugMode();
