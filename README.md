@@ -38,6 +38,28 @@ Notes:
 - The site must be served over http(s). Opening `public/index.html` directly via file:// will not allow mic permissions.
 - When prompted by the browser, allow microphone access.
 
+
+## Modes and Debugging
+
+### Debug mode
+- Purpose: show the recognition feedback box and the "Test Hebrew Word" button for easier testing.
+- Enable via URL: `?debug=on` (disable with `?debug=off`)
+- Keyboard toggle: press `D` to toggle on/off without reloading
+- Persistence: your choice is saved in `localStorage` under `hebrewTrainerDebug`
+- URL sync: toggling with `D` updates the `debug` query param (no reload)
+
+### Hebrew‑only mode
+- Purpose: skip the English translation step. After a correct Hebrew reading, advance directly to the next Hebrew word.
+- Enable via URL: `?hebrewOnly=on` or `?mode=hebrew`
+- Disable via URL: `?hebrewOnly=off` (or remove the parameter)
+- Note: this mode is read on page load. To change it, adjust the URL and reload the page.
+
+### Examples
+- Normal mode: `http://localhost:8080/`
+- Debug only: `http://localhost:8080/?debug=on`
+- Hebrew‑only: `http://localhost:8080/?hebrewOnly=on`
+- Hebrew‑only + Debug: `http://localhost:8080/?hebrewOnly=on&debug=on`
+
 ## What’s in here
 
 - `public/` – the static web app
