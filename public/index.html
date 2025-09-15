@@ -92,6 +92,24 @@
       } catch (e) { }
     })();
   </script>
+  <!-- Mobile Console Interceptor - load only in debug mode -->
+  <script>
+    (function () {
+      try {
+        var url = new URL(window.location.href);
+        var debug = url.searchParams.get('debug');
+        var ls = null;
+        try { ls = localStorage.getItem('hebrewTrainerDebug'); } catch (e) { }
+        var enabled = (debug === 'on') || (ls === 'on');
+        if (enabled) {
+          var s = document.createElement('script');
+          s.src = 'mobile-console-interceptor.js';
+          document.body.appendChild(s);
+        }
+      } catch (e) { }
+    })();
+  </script>
+
 </body>
 
 </html>

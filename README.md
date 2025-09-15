@@ -149,3 +149,68 @@ Troubleshooting
 - Seeing outdated content: ensure Root Directory is `public`; you can also trigger a redeploy from the Vercel UI or push a no-op commit
 - Mic/speech not working on your deploy: make sure you’re loading the site over http(s) and have granted microphone permissions in the browser
 
+
+
+## LLM Team Development Workflow (Summary)
+
+- Never commit directly to main
+- Create a feature branch from main for each change
+- Open a PR into staging; validate on the PR Preview link and on the staging URL
+- After approval, merge staging → main to deploy to Production
+- Keep PRs focused and small; include a short test plan in the description
+- Use debug mode only when testing; do not ship debug query params in shared links
+
+Useful links
+- Staging: https://words-he-git-staging-zuriel-yahavs-projects.vercel.app
+- Production: https://words-he.vercel.app
+
+---
+
+## Mobile Debug System (Real-time mobile logs)
+
+Purpose
+- Stream mobile console logs, errors, and touch events from the device to your Mac terminal while testing
+- Works alongside Eruda (in-page mobile console) for on-device inspection
+
+Activation (client-side)
+- Enabled only in debug mode (same as Eruda)
+- Load order is already wired in public/index.html; when debug is on, it loads:
+  - Eruda from CDN
+  - public/mobile-console-interceptor.js
+
+Query params
+- debug=on | off — enables debug mode (Eruda + interceptor)
+- debugHttp=http://HOST:3001/log — HTTP endpoint for streaming logs
+- debugWs=wss://HOST:3001 — optional WSS endpoint if you have a public WebSocket log server
+
+Local Wi‑Fi workflow (no external dependencies)
+1) Terminal A — start the log server (Python):
+   ```bash
+   python3 scripts/mobile_log_server.py 3001
+   # Health: http://localhost:3001/health
+   ```
+2) Terminal B — serve the app locally:
+   ```bash
+   cd public && python3 -m http.server 5500
+   ```
+3) On your phone (same Wi‑Fi network), open:
+   - http://[MAC_IP]:5500/?debug=on&debugHttp=http://[MAC_IP]:3001/log
+   - Tip: find your Mac IP with: ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}'
+
+Vercel + public WSS workflow (optional)
+- Use your public WSS server to avoid mixed-content issues on HTTPS pages
+- Example: https://<preview-or-staging>/?debug=on&debugWs=wss://mobile-logs.zurielyahav.com
+
+What gets captured
+- console.log/warn/error/info
+- window.onerror and unhandledrejection
+- Touch events (throttled), device/viewport info
+
+Files
+- public/mobile-console-interceptor.js — client script that forwards logs
+- scripts/mobile_log_server.py — simple local HTTP log collector (POST /log)
+
+Notes
+- iOS Safari does not support the Web Speech Recognition API; the debug system still works for logs and errors
+- Android Chrome supports recognition; ensure the site has mic permission
+- For LAN testing, HTTP is fine; for Vercel/HTTPS, prefer WSS for sockets
