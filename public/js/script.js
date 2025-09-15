@@ -13,6 +13,11 @@ const recognitionFeedbackEl = document.getElementById('recognitionFeedback');
 const recognizedTextEl = document.getElementById('recognizedText');
 const speakerButtonEl = document.getElementById('speakerButton');
 const exitButtonEl = document.getElementById('exitButton');
+const wordImageEl = document.getElementById('wordImage');
+const styleSelectEl = document.getElementById('styleSelect');
+const stylesGridEl = document.getElementById('stylesGrid');
+const wordImageBoxEl = document.getElementById('wordImageBox');
+const speakerRowEl = document.querySelector('.speaker-row');
 
 // Utility functions
 function showError(message) {
@@ -57,6 +62,16 @@ window.addEventListener('load', function () {
 	console.log(`   Timestamp: ${new Date().toISOString()}`);
 
 	updateStatus('Click "Start Training" to begin');
+
+	// On Start screen, hide gameplay UI elements
+	try {
+		if (wordImageBoxEl) wordImageBoxEl.style.display = 'none';
+		hebrewTextEl.style.display = 'none';
+		statusEl.style.display = 'none';
+		soundVisualizerEl.style.display = 'none';
+		if (speakerRowEl) speakerRowEl.style.display = 'none';
+		hideRecognitionFeedback();
+	} catch (_) {}
 
 	// Clean up any inline styles and use CSS classes instead
 	errorEl.classList.add('hidden');

@@ -9,6 +9,11 @@ let listeningStage = null; // Stage snapshot when recognition actually starts
 let listeningLang = null; // Language snapshot when recognition actually starts
 let lastInterimLogAt = 0; // throttle noisy interim logs
 
+// Session-scoped diagnostics for debugging recognition quality
+let sessionResultCount = 0;
+let lastHeardTranscript = '';
+let lastHeardConfidence = null;
+
 // Speech Recognition Setup
 function setupSpeechRecognition() {
 	console.log('🔧 [SETUP] Setting up speech recognition...');
@@ -48,6 +53,10 @@ function setupSpeechRecognition() {
 		listeningLang = recognition.lang;
 
 		isListening = true;
+		// Reset per-session diagnostics
+		sessionResultCount = 0;
+		lastHeardTranscript = '';
+		lastHeardConfidence = null;
 		updateStatus(
 			'<div class="listening"><span class="mic-indicator"></span>Listening...</div>'
 		);
@@ -63,6 +72,28 @@ function setupSpeechRecognition() {
 		console.log(`   Timestamp: ${new Date().toISOString()}`);
 
 		isListening = false;
+		// Diagnostics: if no accepted result this session, log what we heard vs expected
+		try {
+			if (
+				(listeningStage === 'hebrew' || listeningStage === 'translation') &&
+				!resultAccepted
+			) {
+				const curr = words[currentWordIndex] || {};
+				const expected =
+					listeningStage === 'hebrew'
+						? curr.he_alternatives || []
+						: curr.en_alternatives || [];
+				console.warn('👂 [RECOGNITION] Session ended without accepted match');
+				console.warn(
+					'   Last heard:',
+					lastHeardTranscript,
+					'| confidence:',
+					lastHeardConfidence
+				);
+				console.warn('   Expected alternatives:', expected);
+			}
+		} catch (_) {}
+
 		if (
 			allowAutoRestart &&
 			(currentStage === 'hebrew' || currentStage === 'translation')
@@ -105,6 +136,14 @@ function setupSpeechRecognition() {
 			console.log(
 				'ℹ️ [RECOGNITION] No speech detected — keeping session alive'
 			);
+			try {
+				const curr = words[currentWordIndex] || {};
+				const expected =
+					currentStage === 'hebrew'
+						? curr.he_alternatives || []
+						: curr.en_alternatives || [];
+				console.warn('   Expected alternatives at this moment:', expected);
+			} catch (_) {}
 			return;
 		}
 		if (event.error === 'aborted') {
@@ -160,8 +199,31 @@ function setupSpeechRecognition() {
 
 		console.log(`   Last result index: ${results.length - 1}`);
 		console.log(`   Is final: ${lastResult.isFinal}`);
+		// Log everything the API heard in this chunk (alternatives) immediately
+		try {
+			const alts = Array.from(lastResult).map((alt) => ({
+				text: alt.transcript,
+				confidence: typeof alt.confidence === 'number' ? alt.confidence : null,
+			}));
+			const primaryNow = (lastResult[0] && lastResult[0].transcript) || '';
+			console.log('👂 [HEARD] Alternatives:', alts);
+			console.log(
+				'👂 [HEARD] Primary:',
+				primaryNow,
+				'| final:',
+				lastResult.isFinal
+			);
+		} catch (_) {}
 
 		const primaryTranscript = (lastResult[0] && lastResult[0].transcript) || '';
+		// Track last-heard transcript for diagnostics
+		sessionResultCount++;
+		lastHeardTranscript = primaryTranscript;
+		try {
+			lastHeardConfidence = (lastResult[0] && lastResult[0].confidence) ?? null;
+		} catch (_) {
+			lastHeardConfidence = null;
+		}
 		// Ignore stale results that arrive after the stage has changed
 		if (currentStage !== listeningStage) {
 			console.log(
@@ -370,9 +432,23 @@ function stopListening() {
 		);
 	}
 
-	console.log('🎨 [STOP_LISTENING] Hiding visualizer and feedback');
-	hideSoundVisualizer();
+	console.log(
+		'🎨 [STOP_LISTENING] Keeping visualizer visible; hiding feedback'
+	);
+	// Keep visualizer visible during gameplay; just hide the recognition feedback box
 	hideRecognitionFeedback();
+	// While in-game, show a passive status so the word doesn't jump
+	try {
+		if (
+			currentStage === 'hebrew' ||
+			currentStage === 'english' ||
+			currentStage === 'start-english'
+		) {
+			updateStatus(
+				'<div class="listening off"><span class="mic-indicator"></span>Not listening…</div>'
+			);
+		}
+	} catch (_) {}
 }
 
 // Speech handling

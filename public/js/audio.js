@@ -120,12 +120,12 @@ async function setupSoundVisualizer() {
 }
 
 function showSoundVisualizer() {
-	soundVisualizerEl.style.display = 'block';
+	soundVisualizerEl.style.visibility = 'visible';
 	startVisualization();
 }
 
 function hideSoundVisualizer() {
-	soundVisualizerEl.style.display = 'none';
+	soundVisualizerEl.style.visibility = 'hidden';
 	if (animationId) {
 		cancelAnimationFrame(animationId);
 		animationId = null;
