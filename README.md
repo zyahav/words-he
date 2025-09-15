@@ -93,9 +93,59 @@ You don’t need BMAD to run the app locally. It’s there to help with future d
   - Speak clearly and try a quieter environment
   - Adjust content in `public/js/words.js`
 
-## Deploying (optional)
+## Deployment and CI/CD (Vercel)
 
-Since this is a static site, you can deploy with any static hosting (e.g., GitHub Pages, Netlify, Vercel):
-- Build step: none
-- Publish directory: `public`
+This repo is set up to deploy via Vercel using GitHub as the source of truth.
+
+Environments
+- Production: branch `main` → https://words-he.vercel.app
+- Staging: branch `staging` → Vercel Preview deployment (optionally aliased to a stable URL)
+- PR Previews: every non-`main` branch and PR gets an automatic Preview URL
+
+Vercel Project settings
+- Framework Preset: Other
+- Root Directory: public
+- Build Command: (empty)
+- Output Directory: (empty)
+- Install Command: (empty)
+- Git: Connected to GitHub repo `zyahav/words-he`
+- Recommended: Add a Branch Alias under Project → Settings → Git: `staging` → branch `staging`
+  - Result: a clean, stable URL like `https://words-he-staging.vercel.app` (once the alias is added in Vercel)
+
+Branching and deployment flow
+1) Create a feature branch from `main`
+2) Open a PR into `staging` (recommended)
+3) Verify on:
+   - The PR Preview URL (auto-created by Vercel)
+   - The `staging` branch Preview URL (persistent staging)
+4) When ready, merge `staging` → `main` to deploy to Production
+
+Create the staging branch (one-time)
+```bash
+git checkout main && git pull
+git checkout -b staging
+git push -u origin staging
+```
+
+Trigger a staging redeploy (no code changes)
+```bash
+git checkout staging
+git commit --allow-empty -m "chore: trigger staging deployment"
+git push
+```
+
+How PR Previews work
+- Any push to a non-`main` branch triggers a Preview deployment with a unique URL
+- Opening a GitHub PR also shows a Vercel bot comment with the Preview link
+- Every new commit to the PR updates the Preview URL
+
+Notes and tips
+- This is a purely static site; no environment variables are required
+- Large binary assets (e.g., many images) may benefit from Git LFS
+- Optional: In GitHub, make Vercel’s “Preview Deployment — Ready” a required status check before merging
+
+Troubleshooting
+- Staging not visible in Vercel “Active Branches”: push an empty commit to `staging` (see above)
+- Seeing outdated content: ensure Root Directory is `public`; you can also trigger a redeploy from the Vercel UI or push a no-op commit
+- Mic/speech not working on your deploy: make sure you’re loading the site over http(s) and have granted microphone permissions in the browser
 
