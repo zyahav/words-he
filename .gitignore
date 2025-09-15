@@ -1,1 +1,18 @@
 # BMAD (local only)
+
+# Secrets and local env
+.env
+
+# Local logs
+mobile-logs.jsonl
+
+# OS/Editor junk
+.DS_Store
+.idea/
+.vscode/
+
+# Node (if used locally)
+node_modules/
+
+# Vercel local config (if present)
+.vercel/
