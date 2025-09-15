@@ -321,7 +321,7 @@ function setupSpeechRecognition() {
 	return true;
 }
 
-function startListening() {
+function startListening(immediate = false) {
 	console.log('🎯 [START_LISTENING] Function called');
 	console.log(`   Recognition exists: ${!!recognition}`);
 	console.log(`   Is listening: ${isListening}`);
@@ -359,9 +359,6 @@ function startListening() {
 		}
 
 		try {
-			console.log(
-				'⏰ [START_LISTENING] Setting 100ms timeout before starting recognition'
-			);
 			if (startTimerId) {
 				clearTimeout(startTimerId);
 				startTimerId = null;
@@ -370,29 +367,41 @@ function startListening() {
 			// allow auto-restart from here on
 			allowAutoRestart = true;
 			resultAccepted = false; // reset fast-pass guard at (re)start
-			startTimerId = setTimeout(() => {
-				console.log(
-					'⏰ [START_LISTENING] Timeout triggered - checking conditions'
-				);
-				console.log(`   Recognition exists: ${!!recognition}`);
-				console.log(`   Is listening: ${isListening}`);
-				console.log(`   Current stage: ${currentStage}`);
 
-				if (
-					recognition &&
-					!isListening &&
-					(currentStage === 'hebrew' || currentStage === 'translation')
-				) {
+			if (immediate) {
+				console.log('🎤 [START_LISTENING] Immediate start (no timeout)');
+				console.log(
+					`🎤 [START_LISTENING] Starting recognition with language: ${recognition.lang}`
+				);
+				recognition.start();
+			} else {
+				console.log(
+					'⏰ [START_LISTENING] Setting 100ms timeout before starting recognition'
+				);
+				startTimerId = setTimeout(() => {
 					console.log(
-						`🎤 [START_LISTENING] Starting recognition with language: ${recognition.lang}`
+						'⏰ [START_LISTENING] Timeout triggered - checking conditions'
 					);
-					recognition.start();
-				} else {
-					console.log(
-						'❌ [START_LISTENING] Not starting recognition - conditions not met'
-					);
-				}
-			}, 100);
+					console.log(`   Recognition exists: ${!!recognition}`);
+					console.log(`   Is listening: ${isListening}`);
+					console.log(`   Current stage: ${currentStage}`);
+
+					if (
+						recognition &&
+						!isListening &&
+						(currentStage === 'hebrew' || currentStage === 'translation')
+					) {
+						console.log(
+							`🎤 [START_LISTENING] Starting recognition with language: ${recognition.lang}`
+						);
+						recognition.start();
+					} else {
+						console.log(
+							'❌ [START_LISTENING] Not starting recognition - conditions not met'
+						);
+					}
+				}, 100);
+			}
 		} catch (e) {
 			console.error('❌ [START_LISTENING] Recognition start error:', e);
 		}

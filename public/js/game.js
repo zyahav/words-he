@@ -3,6 +3,8 @@ let currentWordIndex = 0;
 let currentStage = 'start'; // start, hebrew, translation, complete
 let startTime = null;
 let appInitialized = false; // one-time setup flag
+// On Android Chrome, start SpeechRecognition immediately on the first user tap
+let preferImmediateStartOnce = false;
 
 // Style selection (image theme)
 let selectedStyle = '';
@@ -345,16 +347,31 @@ function showHebrewWord() {
 	// No instructional text during Hebrew stage; status will show Listening... when recognition starts
 	updateStatus('');
 
-	// Start listening with Hebrew language (short delay for clean transition)
-	console.log(
-		'⏰ [SHOW_HEBREW] Setting 150ms timeout before starting Hebrew recognition'
-	);
-	setTimeout(() => {
-		console.log(
-			'⏰ [SHOW_HEBREW] Timeout triggered - starting Hebrew recognition'
-		);
-		startListening();
-	}, 150);
+	// Start listening (immediately on Android Chrome first tap; otherwise keep short delay)
+	try {
+		const ua = navigator.userAgent || '';
+		const isAndroidChrome = /Android/i.test(ua) && /Chrome/i.test(ua);
+		if (preferImmediateStartOnce && isAndroidChrome) {
+			console.log(
+				'🎤 [SHOW_HEBREW] Immediate start for Android Chrome (first run)'
+			);
+			preferImmediateStartOnce = false;
+			startListening(true);
+		} else {
+			console.log(
+				'⏰ [SHOW_HEBREW] Setting 150ms timeout before starting Hebrew recognition'
+			);
+			setTimeout(() => {
+				console.log(
+					'⏰ [SHOW_HEBREW] Timeout triggered - starting Hebrew recognition'
+				);
+				startListening();
+			}, 150);
+		}
+	} catch (_) {
+		console.log('⚠️ [SHOW_HEBREW] Fallback to delayed start');
+		setTimeout(() => startListening(), 150);
+	}
 }
 
 function handleCorrectHebrew() {
@@ -590,6 +607,16 @@ async function startApp() {
 	if (!setupSpeechRecognition()) {
 		return;
 	}
+
+	// Enable immediate first start for Android Chrome only
+	try {
+		const ua = navigator.userAgent || '';
+		const isAndroidChrome = /Android/i.test(ua) && /Chrome/i.test(ua);
+		preferImmediateStartOnce = !!isAndroidChrome;
+		console.log(
+			`🛠️ [START_APP] preferImmediateStartOnce: ${preferImmediateStartOnce}`
+		);
+	} catch (_) {}
 
 	// Hide start button and start training
 	appInitialized = true;
