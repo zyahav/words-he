@@ -83,7 +83,51 @@ function beginRun() {
 	currentStage = 'start';
 
 	console.log('🎯 [BEGIN_RUN] Starting with first Hebrew word');
+	if (exitButtonEl) {
+		exitButtonEl.classList.remove('hidden');
+		exitButtonEl.style.display = 'inline-flex';
+	}
 	showHebrewWord();
+}
+
+// Exit to Start screen (shows Start button and title, stops recognition)
+function exitToStart() {
+	console.log('⬅️ [EXIT] Exit to Start requested');
+	// Stop mic and visuals
+	stopListening();
+	hideSoundVisualizer();
+	hideRecognitionFeedback();
+
+	// Reset stage
+	currentStage = 'start';
+
+	// Reset UI elements
+	hebrewTextEl.textContent = '';
+	speakerButtonEl.style.display = 'none';
+	updateStatus('Click "Start Training" to begin');
+
+	if (starsEl) {
+		starsEl.classList.add('hidden');
+		starsEl.style.display = 'none';
+	}
+	if (completionTimeEl) {
+		completionTimeEl.classList.add('hidden');
+		completionTimeEl.style.display = 'none';
+	}
+	if (restartButtonEl) {
+		restartButtonEl.classList.add('hidden');
+		restartButtonEl.style.display = 'none';
+	}
+	if (exitButtonEl) {
+		exitButtonEl.classList.add('hidden');
+		exitButtonEl.style.display = 'none';
+	}
+
+	// Show start UI
+	const startBtn = document.querySelector('.start-button');
+	const titleEl = document.querySelector('h1');
+	if (titleEl) titleEl.style.display = 'block';
+	if (startBtn) startBtn.style.display = 'inline-block';
 }
 
 // Stage handlers
