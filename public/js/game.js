@@ -361,6 +361,11 @@ async function startApp() {
 function restartApp() {
 	console.log('🔄 [RESTART_APP] Function called');
 	console.log(`   Timestamp: ${new Date().toISOString()}`);
+	// Stop any ongoing listening and clear timers/visuals
+	stopListening();
+	// Reinitialize modes as on page load (like a soft reload)
+	initHebrewOnlyMode();
+	initDebugMode();
 	if (!appInitialized) {
 		startApp();
 		return;
@@ -477,6 +482,8 @@ if (document.readyState === 'loading') {
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'd' || e.key === 'D') {
 				toggleDebugMode();
+			} else if (e.key === 'r' || e.key === 'R') {
+				restartApp();
 			}
 		});
 	});
@@ -486,6 +493,8 @@ if (document.readyState === 'loading') {
 	document.addEventListener('keydown', (e) => {
 		if (e.key === 'd' || e.key === 'D') {
 			toggleDebugMode();
+		} else if (e.key === 'r' || e.key === 'R') {
+			restartApp();
 		}
 	});
 }
