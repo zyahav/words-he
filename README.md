@@ -168,49 +168,26 @@ Useful links
 
 ## Mobile Debug System (Real-time mobile logs)
 
-Purpose
-- Stream mobile console logs, errors, and touch events from the device to your Mac terminal while testing
-- Works alongside Eruda (in-page mobile console) for on-device inspection
+We now use a standalone, shared mobile debug service. This app simply enables debug mode and loads the client from the service CDN when `?debug=on`.
 
-Activation (client-side)
-- Enabled only in debug mode (same as Eruda)
-- Load order is already wired in public/index.html; when debug is on, it loads:
-  - Eruda from CDN
-  - public/mobile-console-interceptor.js
+- Canonical instructions: see docs/MOBILE_DEBUG_INSTRUCTIONS.md
+- The page loads Eruda + the external interceptor only when `debug=on`
 
 Query params
-- debug=on | off — enables debug mode (Eruda + interceptor)
-- debugHttp=http://HOST:3001/log — HTTP endpoint for streaming logs
-- debugWs=wss://HOST:3001 — optional WSS endpoint if you have a public WebSocket log server
+- `debug=on | off` — enables debug mode (Eruda + interceptor)
+- `debugHttp=http://HOST:PORT/log` — HTTP endpoint for streaming logs (local testing on HTTP pages)
+- `debugWs=wss://HOST` — WSS endpoint for HTTPS pages (staging/production)
 
-Local Wi‑Fi workflow (no external dependencies)
-1) Terminal A — start the log server (Python):
-   ```bash
-   python3 scripts/mobile_log_server.py 3001
-   # Health: http://localhost:3001/health
-   ```
-2) Terminal B — serve the app locally:
-   ```bash
-   cd public && python3 -m http.server 5500
-   ```
-3) On your phone (same Wi‑Fi network), open:
-   - http://[MAC_IP]:5500/?debug=on&debugHttp=http://[MAC_IP]:3001/log
-   - Tip: find your Mac IP with: ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}'
-
-Vercel + public WSS workflow (optional)
-- Use your public WSS server to avoid mixed-content issues on HTTPS pages
-- Example: https://<preview-or-staging>/?debug=on&debugWs=wss://mobile-logs.zurielyahav.com
+Typical usage
+- Local HTTP page: `http://[MAC_IP]:5500/?debug=on&debugHttp=http://[MAC_IP]:3001/log`
+- Staging/Prod (HTTPS): `https://<staging-or-preview>/?debug=on&debugWs=wss://<your-wss-hostname>`
 
 What gets captured
 - console.log/warn/error/info
 - window.onerror and unhandledrejection
 - Touch events (throttled), device/viewport info
 
-Files
-- public/mobile-console-interceptor.js — client script that forwards logs
-- scripts/mobile_log_server.py — simple local HTTP log collector (POST /log)
-
 Notes
-- iOS Safari does not support the Web Speech Recognition API; the debug system still works for logs and errors
-- Android Chrome supports recognition; ensure the site has mic permission
-- For LAN testing, HTTP is fine; for Vercel/HTTPS, prefer WSS for sockets
+- iOS Safari lacks the Web Speech Recognition API; logging still works
+- Android Chrome supports recognition; ensure mic permission on HTTPS
+- For HTTPS pages, prefer WSS to avoid mixed-content issues
