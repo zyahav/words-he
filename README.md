@@ -112,13 +112,34 @@ Vercel Project settings
 - Recommended: Add a Branch Alias under Project → Settings → Git: `staging` → branch `staging`
   - Result: a clean, stable URL like `https://words-he-staging.vercel.app` (once the alias is added in Vercel)
 
-Branching and deployment flow
-1) Create a feature branch from `main`
-2) Open a PR into `staging` (recommended)
-3) Verify on:
-   - The PR Preview URL (auto-created by Vercel)
-   - The `staging` branch Preview URL (persistent staging)
-4) When ready, merge `staging` → `main` to deploy to Production
+
+### Our CI/CD workflow (two-branch policy)
+- Long‑lived branches: `main` (production) and `staging` (pre‑production)
+- Short‑lived feature branches are used only for PR work and Vercel Preview URLs; delete them after merge
+- Don’t commit directly to `main`; deploy to production via a PR/merge from `staging` after validation
+
+#### Deployment flow (TL;DR)
+1. From `main`, create a short‑lived feature branch and push (Vercel creates a Preview URL)
+2. Open a PR from the feature branch into `staging`; merge when ready for broader testing
+3. Validate on `staging`:
+   - Staging Preview URL: the branch `staging` deployment in Vercel
+   - Optional stable alias (recommended): `https://words-he-staging.vercel.app`
+   - Hebrew Words STT page quick links:
+     - Production: https://words-he.vercel.app/hebrew-words-stt.html?debug=on&debugHttp=https://mobile-logs.zurielyahav.com/log
+     - Staging: https://words-he-git-staging-zuriel-yahavs-projects.vercel.app/hebrew-words-stt.html?debug=on&debugHttp=https://mobile-logs.zurielyahav.com/log
+4. When `staging` looks good, open a PR `staging` → `main` (or merge) to deploy to production
+5. Delete the feature branch (local and remote)
+
+#### Staging and debugging notes
+- Do NOT leave always‑on debug consoles in `main`/`staging`; use the built‑in debug flags instead
+  - `?debug=on` to show live recognition logs/UI aids (toggle with key `D` locally)
+  - `?debugHttp=https://mobile-logs.zurielyahav.com/log` to stream logs to the mobile log server
+- If `staging` isn’t visible in Vercel “Active Branches”, push an empty commit to `staging` to trigger a redeploy (see below)
+
+#### Rollbacks
+- Production (`main`): `git revert <sha>` the offending commit(s) and push — Vercel redeploys automatically
+- Staging: either revert the recent merge or push a corrective commit; avoid force‑push unless absolutely necessary
+
 
 Create the staging branch (one-time)
 ```bash
