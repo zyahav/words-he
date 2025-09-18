@@ -1,0 +1,6 @@
+# CODEOWNERS
+# These owners will be requested for review on PRs.
+# Format: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @zyahav
+
