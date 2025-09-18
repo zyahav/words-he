@@ -170,3 +170,82 @@ Troubleshooting
 - Seeing outdated content: ensure Root Directory is `public`; you can also trigger a redeploy from the Vercel UI or push a no-op commit
 - Mic/speech not working on your deploy: make sure you’re loading the site over http(s) and have granted microphone permissions in the browser
 
+
+
+## Deployment and CI/CD (Vercel)
+
+This repo deploys via Vercel with GitHub as source of truth.
+
+Environments
+- Production: branch `main` → https://words-he.vercel.app
+- Staging: branch `staging` → will be aliased in Vercel to https://words-he-staging.vercel.app
+- PR Previews: every non-`main` branch and PR gets an automatic Preview URL
+
+Vercel Project settings
+- Framework Preset: Other
+- Root Directory: public
+- Build Command: (empty)
+- Output Directory: (empty)
+- Install Command: (empty)
+- Git: Connected to GitHub repo `zyahav/words-he`
+
+### Our CI/CD workflow (two-branch policy)
+- Long‑lived branches: `main` (production) and `staging` (pre‑production)
+- Short‑lived feature branches are used only for PR work and Vercel Preview URLs; delete them after merge
+- Don’t commit directly to `main`; deploy to production via a PR/merge from `staging` after validation
+
+#### Deployment flow (TL;DR)
+1. From `main`, create a short‑lived feature branch and push (Vercel creates a Preview URL)
+2. Open a PR from the feature branch into `staging`; merge when ready for broader testing
+3. Validate on `staging`:
+   - Staging Preview URL: the branch `staging` deployment in Vercel
+   - Stable alias (once configured): `https://words-he-staging.vercel.app`
+   - Hebrew Words STT quick link: `/hebrew-words-stt.html?debug=on&debugHttp=https://mobile-logs.zurielyahav.com/log`
+4. When `staging` looks good, open a PR `staging` → `main` to deploy to Production
+5. Delete the feature branch (local and remote)
+
+#### Hotfix procedure (exception path)
+- If production needs an urgent fix:
+  - Branch: `hotfix/<brief-name>` from `main`
+  - PR: target `main` (require approval + checks)
+  - After merge: production deploys automatically; then merge `main` → `staging` to keep them aligned
+
+#### Staging sync policy (avoid drift)
+- Keep `staging` either equal to `main`, or `main` + a very small number of features being validated
+- After every production release (or weekly), merge `main` → `staging`
+- If a feature blocks `staging`, revert it from `staging` and continue on the feature branch
+
+#### Preview‑first testing policy
+- Validate on the Vercel Preview URL of the feature branch before merging to `staging`
+- Merge to `staging` only when preview looks good
+
+#### Simplified path (trivial changes)
+- For low‑risk trivial changes (docs, small styles), allow `feature` → `main` PR with preview validation and approval
+- Default path for anything non‑trivial remains `feature` → `staging` → `main`
+
+#### Staging and debugging notes
+- Do NOT leave always‑on debug consoles in `main`/`staging`; use flags instead
+  - `?debug=on` to show live recognition logs/UI aids
+  - `?debugHttp=https://mobile-logs.zurielyahav.com/log` to stream logs to the mobile log server
+
+#### Rollbacks
+- Production (`main`): `git revert <sha>` the offending commit(s) and push — Vercel redeploys automatically
+- Staging: either revert the recent merge or push a corrective commit; avoid force‑push unless absolutely necessary
+
+#### Useful commands
+Create the staging branch (one‑time)
+```bash
+git checkout main && git pull
+git checkout -b staging
+git push -u origin staging
+```
+Trigger a staging redeploy (no code changes)
+```bash
+git checkout staging
+git commit --allow-empty -m "chore: trigger staging deployment"
+git push
+```
+How PR Previews work
+- Any push to a non-`main` branch triggers a Preview deployment with a unique URL
+- Opening a GitHub PR also shows a Vercel bot comment with the Preview link
+- Every new commit to the PR updates the Preview URL
